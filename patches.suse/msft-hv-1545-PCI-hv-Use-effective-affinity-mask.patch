@@ -3,7 +3,7 @@ Date: Wed, 1 Nov 2017 20:30:53 +0000
 Patch-mainline: v4.15-rc1
 Subject: PCI: hv: Use effective affinity mask
 Git-commit: 79aa801e899417a56863d6713f76c4e108856000
-References: bsc#1107207
+References: bsc#1109772
 
 The effective_affinity_mask is always set when an interrupt is assigned in
 __assign_irq_vector() -> apic->cpu_mask_to_apicid(), e.g. for struct apic

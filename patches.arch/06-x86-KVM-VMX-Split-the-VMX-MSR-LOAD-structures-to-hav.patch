@@ -3,7 +3,8 @@ From: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>
 Date: Wed, 20 Jun 2018 13:58:37 -0400
 Subject: [PATCH 36/40] x86/KVM/VMX: Split the VMX MSR LOAD structures to have
  an host/guest numbers
-Patch-mainline: not yet, under discussion
+Patch-mainline: v4.19-rc1
+Git-commit: 33966dd6b2d2c352fae55412db2ea8cfff5df13a
 References: bsc#1089343 CVE-2018-3646
 
 commit 33966dd6b2d2c352fae55412db2ea8cfff5df13a upstream
@@ -21,7 +22,7 @@ Signed-off-by: Jiri Kosina <jkosina@suse.cz>
 
 --- a/arch/x86/kvm/vmx.c
 +++ b/arch/x86/kvm/vmx.c
-@@ -629,6 +629,11 @@ static inline int pi_test_sn(struct pi_d
+@@ -620,6 +620,11 @@ static inline int pi_test_sn(struct pi_d
  			(unsigned long *)&pi_desc->control);
  }
  
@@ -33,7 +34,7 @@ Signed-off-by: Jiri Kosina <jkosina@suse.cz>
  struct vcpu_vmx {
  	struct kvm_vcpu       vcpu;
  	unsigned long         host_rsp;
-@@ -662,9 +667,8 @@ struct vcpu_vmx {
+@@ -653,9 +658,8 @@ struct vcpu_vmx {
  	struct loaded_vmcs   *loaded_vmcs;
  	bool                  __launched; /* temporary, used in vmx_vcpu_run */
  	struct msr_autoload {
@@ -45,7 +46,7 @@ Signed-off-by: Jiri Kosina <jkosina@suse.cz>
  	} msr_autoload;
  	struct {
  		int           loaded;
-@@ -2046,18 +2050,18 @@ static void clear_atomic_switch_msr(stru
+@@ -2037,18 +2041,18 @@ static void clear_atomic_switch_msr(stru
  		}
  		break;
  	}
@@ -73,7 +74,7 @@ Signed-off-by: Jiri Kosina <jkosina@suse.cz>
  }
  
  static void add_atomic_switch_msr_special(struct vcpu_vmx *vmx,
-@@ -2109,24 +2113,25 @@ static void add_atomic_switch_msr(struct
+@@ -2100,24 +2104,25 @@ static void add_atomic_switch_msr(struct
  		wrmsrl(MSR_IA32_PEBS_ENABLE, 0);
  	}
  
@@ -121,7 +122,7 @@ Signed-off-by: Jiri Kosina <jkosina@suse.cz>
  
  	if (vmcs_config.vmentry_ctrl & VM_ENTRY_LOAD_IA32_PAT)
  		vmcs_write64(GUEST_IA32_PAT, vmx->vcpu.arch.pat);
-@@ -10892,10 +10897,10 @@ static int prepare_vmcs02(struct kvm_vcp
+@@ -10874,10 +10879,10 @@ static int prepare_vmcs02(struct kvm_vcp
  	 * Set the MSR load/store lists to match L0's settings.
  	 */
  	vmcs_write32(VM_EXIT_MSR_STORE_COUNT, 0);
@@ -136,7 +137,7 @@ Signed-off-by: Jiri Kosina <jkosina@suse.cz>
  
  	/*
  	 * HOST_RSP is normally set correctly in vmx_vcpu_run() just before
-@@ -11833,8 +11838,8 @@ static void nested_vmx_vmexit(struct kvm
+@@ -11834,8 +11839,8 @@ static void nested_vmx_vmexit(struct kvm
  	vmx_segment_cache_clear(vmx);
  
  	/* Update any VMCS fields that might have changed while L2 ran */

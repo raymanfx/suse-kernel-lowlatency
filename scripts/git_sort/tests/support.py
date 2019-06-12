@@ -3,7 +3,8 @@
 
 import datetime
 import os.path
-import pygit2
+
+import pygit2_wrapper as pygit2
 
 
 # from http://www.pygit2.org/recipes/git-show.html
@@ -56,7 +57,8 @@ def format_sanitized_subject(message):
     return "".join(result[:52])
 
 
-def format_patch(commit, mainline=None, repo=None, directory=""):
+def format_patch(commit, mainline=None, repo=None, references=None,
+                 directory=""):
     name = os.path.join(directory, format_sanitized_subject(commit.message) +
                         ".patch")
 
@@ -74,6 +76,8 @@ def format_patch(commit, mainline=None, repo=None, directory=""):
             f.write("Git-commit: %s\n" % (str(commit.id),))
         else:
             f.write("Patch-mainline: No\n")
+        if references is not None:
+            f.write("References: %s\n" % (references,))
         f.write("Subject: %s" % (commit.message,))
         if not commit.message.endswith("\n"):
             f.write("\n")

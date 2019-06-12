@@ -2,7 +2,8 @@ From c441e50d54c697c6b5e309efd9de3740972a6975 Mon Sep 17 00:00:00 2001
 From: Paolo Bonzini <pbonzini@redhat.com>
 Date: Mon, 2 Jul 2018 13:07:14 +0200
 Subject: [PATCH 35/40] x86/KVM/VMX: Add L1D flush logic
-Patch-mainline: not yet, under discussion
+Patch-mainline: v4.19-rc1
+Git-commit: c595ceee45707f00f64f61c54fb64ef0cc0b4e85
 References: bsc#1089343 CVE-2018-3646
 
 commit c595ceee45707f00f64f61c54fb64ef0cc0b4e85 upstream
@@ -78,7 +79,7 @@ Signed-off-by: Jiri Kosina <jkosina@suse.cz>
  		trace_kvm_page_fault(fault_address, error_code);
 --- a/arch/x86/kvm/vmx.c
 +++ b/arch/x86/kvm/vmx.c
-@@ -9055,9 +9055,20 @@ static int vmx_handle_exit(struct kvm_vc
+@@ -9001,9 +9001,20 @@ static int vmx_handle_exit(struct kvm_vc
  #define L1D_CACHE_ORDER 4
  static void *vmx_l1d_flush_pages;
  
@@ -100,7 +101,7 @@ Signed-off-by: Jiri Kosina <jkosina@suse.cz>
  
  	if (static_cpu_has(X86_FEATURE_FLUSH_L1D)) {
  		wrmsrl(MSR_IA32_FLUSH_CMD, L1D_FLUSH);
-@@ -9328,6 +9339,7 @@ static void vmx_handle_external_intr(str
+@@ -9274,6 +9285,7 @@ static void vmx_handle_external_intr(str
  			[ss]"i"(__KERNEL_DS),
  			[cs]"i"(__KERNEL_CS)
  			);
@@ -108,7 +109,7 @@ Signed-off-by: Jiri Kosina <jkosina@suse.cz>
  	}
  }
  STACK_FRAME_NON_STANDARD(vmx_handle_external_intr);
-@@ -9582,6 +9594,12 @@ static void __noclone vmx_vcpu_run(struc
+@@ -9528,6 +9540,12 @@ static void __noclone vmx_vcpu_run(struc
  	x86_spec_ctrl_set_guest(vmx->spec_ctrl, 0);
  
  	vmx->__launched = vmx->loaded_vmcs->launched;
@@ -121,7 +122,7 @@ Signed-off-by: Jiri Kosina <jkosina@suse.cz>
  	asm(
  		/* Store host registers */
  		"push %%" _ASM_DX "; push %%" _ASM_BP ";"
-@@ -11295,6 +11313,9 @@ static int nested_vmx_run(struct kvm_vcp
+@@ -11241,6 +11259,9 @@ static int nested_vmx_run(struct kvm_vcp
  		return 1;
  	}
  
@@ -141,7 +142,7 @@ Signed-off-by: Jiri Kosina <jkosina@suse.cz>
  	{ "mmu_shadow_zapped", VM_STAT(mmu_shadow_zapped) },
  	{ "mmu_pte_write", VM_STAT(mmu_pte_write) },
  	{ "mmu_pte_updated", VM_STAT(mmu_pte_updated) },
-@@ -4572,6 +4573,9 @@ int kvm_write_guest_virt_system(struct x
+@@ -4594,6 +4595,9 @@ static int kvm_write_guest_virt_helper(g
  	void *data = val;
  	int r = X86EMUL_CONTINUE;
  
@@ -150,8 +151,8 @@ Signed-off-by: Jiri Kosina <jkosina@suse.cz>
 +
  	while (bytes) {
  		gpa_t gpa =  vcpu->arch.walk_mmu->gva_to_gpa(vcpu, addr,
- 							     PFERR_WRITE_MASK,
-@@ -5713,6 +5717,8 @@ int x86_emulate_instruction(struct kvm_v
+ 							     access,
+@@ -5756,6 +5760,8 @@ int x86_emulate_instruction(struct kvm_v
  	bool writeback = true;
  	bool write_fault_to_spt = vcpu->arch.write_fault_to_shadow_pgtable;
  
@@ -160,7 +161,7 @@ Signed-off-by: Jiri Kosina <jkosina@suse.cz>
  	/*
  	 * Clear write_fault_to_shadow_pgtable here to ensure it is
  	 * never reused.
-@@ -7161,6 +7167,7 @@ static int vcpu_run(struct kvm_vcpu *vcp
+@@ -7204,6 +7210,7 @@ static int vcpu_run(struct kvm_vcpu *vcp
  	struct kvm *kvm = vcpu->kvm;
  
  	vcpu->srcu_idx = srcu_read_lock(&kvm->srcu);
@@ -168,7 +169,7 @@ Signed-off-by: Jiri Kosina <jkosina@suse.cz>
  
  	for (;;) {
  		if (kvm_vcpu_running(vcpu)) {
-@@ -8172,6 +8179,7 @@ void kvm_arch_vcpu_uninit(struct kvm_vcp
+@@ -8217,6 +8224,7 @@ void kvm_arch_vcpu_uninit(struct kvm_vcp
  
  void kvm_arch_sched_in(struct kvm_vcpu *vcpu, int cpu)
  {

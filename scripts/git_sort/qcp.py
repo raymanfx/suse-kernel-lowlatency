@@ -1,19 +1,38 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+# Copyright (C) 2018 SUSE LLC
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
+# USA.
+
 import argparse
+import io
 import os
 import os.path
-import pygit2
 import shutil
 import subprocess
 import sys
 import tempfile
 
+import pygit2_wrapper as pygit2
+
 import exc
 import lib
+from patch import Patch
 import series_conf
-import tag
 
 
 def format_import(references, tmpdir, dstdir, rev, poi=[]):
@@ -33,7 +52,10 @@ def format_import(references, tmpdir, dstdir, rev, poi=[]):
                            src,))
     subprocess.check_call(("quilt", "import", "-P", dst, src,))
     # This will remind the user to run refresh_patch.sh
-    lib.touch(".pc/%s~refresh" % (dst,))
+    target_dir = os.path.join(".pc", dstdir)
+    if not os.path.isdir(target_dir):
+        os.mkdir(target_dir)
+    lib.touch(os.path.join(".pc", "%s~refresh" % (dst,)))
 
     return 0
 
@@ -83,7 +105,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     if args.followup:
-        with tag.Patch(content=commit.message) as patch:
+        with Patch(io.BytesIO(commit.message.encode())) as patch:
             try:
                 fixes = series_conf.firstword(patch.get("Fixes")[0])
             except IndexError:
@@ -96,8 +118,8 @@ if __name__ == "__main__":
         cwd = os.getcwd()
         os.chdir("patches")
         try:
-            with series_conf.find_commit_in_series(fixes, series) as patch:
-                destination = os.path.dirname(patch.name)
+            with series_conf.find_commit(fixes, series) as (name, patch,):
+                destination = os.path.dirname(name)
                 references = " ".join(patch.get("References"))
         except exc.KSNotFound:
             print("Error: no patch found which contains commit %s." %
@@ -106,7 +128,7 @@ if __name__ == "__main__":
         os.chdir(cwd)
 
         print("Info: using references \"%s\" from patch \"%s\" which contains "
-              "commit %s." % (references, patch, fixes[:12]), file=sys.stderr)
+              "commit %s." % (references, name, fixes[:12]))
     else:
         destination = args.destination
         references = args.references

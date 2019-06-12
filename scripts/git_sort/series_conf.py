@@ -1,6 +1,23 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+# Copyright (C) 2018 SUSE LLC
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
+# USA.
+
 # This script is used by the commit hook to detect if there are changes in the
 # sorted section. Developers may commit to kernel-source without having changed
 # the sorted section and used the git-sort tools, therefore without having the
@@ -15,7 +32,7 @@ import errno
 import sys
 
 import exc
-import tag
+from patch import Patch
 
 
 start_text = "sorted patches"
@@ -92,17 +109,25 @@ filter_series = lambda lines : [firstword(line) for line in lines
 
 
 @contextlib.contextmanager
-def find_commit_in_series(commit, series):
+def find_commit(commit, series, mode="rb"):
     """
+    commit: unabbreviated git commit id
+    series: list of lines from series.conf
+    mode: mode to open the patch files in, should be "rb" or "r+b"
+
     Caller must chdir to where the entries in series can be found.
+
+    Returns patch.Patch instances
     """
     for name in filter_series(series):
-        patch = tag.Patch(name)
+        patch = Patch(open(name, mode=mode))
         found = False
-        if commit in [firstword(value) for value in patch.get("Git-commit")]:
+        if commit in [firstword(value)
+                      for value in patch.get("Git-commit")
+                      if value]:
             found = True
-            yield patch
-        patch.close()
+            yield name, patch
+        patch.writeback()
         if found:
             return
     raise exc.KSNotFound()

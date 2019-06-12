@@ -1,7 +1,8 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 29 Apr 2018 15:20:11 +0200
 Subject: prctl: Add speculation control prctls
-Patch-mainline: not yet, queued in subsystem tree
+Patch-mainline: v4.17-rc7
+Git-commit: b617cfc858161140d69cc0b5cc211996b557a1c7
 References: bsc#1087082 CVE-2018-3639
 
 Add two new prctls to control aspects of speculation related vulnerabilites
@@ -149,9 +150,9 @@ Acked-by: Borislav Petkov <bp@suse.de>
 +   * prctl(PR_SET_SPECULATION_CTRL, PR_SPEC_STORE_BYPASS, PR_SPEC_DISABLE, 0, 0);
 --- a/include/linux/nospec.h
 +++ b/include/linux/nospec.h
-@@ -75,4 +75,9 @@ static inline unsigned long array_index_
- 	_i &= _mask;							\
- 	_i;								\
+@@ -55,4 +55,9 @@ static inline unsigned long array_index_
+ 									\
+ 	(typeof(_i)) (_i & _mask);					\
  })
 +
 +/* Speculation control prctl */

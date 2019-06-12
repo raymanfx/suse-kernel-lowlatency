@@ -2,7 +2,8 @@ From 182a68debec3df71553dea079bad650361372e88 Mon Sep 17 00:00:00 2001
 From: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>
 Date: Wed, 20 Jun 2018 16:42:58 -0400
 Subject: [PATCH] x86/cpufeatures: Add detection of L1D cache flush support.
-Patch-mainline: not yet, under discussion
+Patch-mainline: v4.19-rc1
+Git-commit: 11e34e64e4103955fc4568750914c75d65ea87ee
 References: bsc#1089343 CVE-2018-3646
 
 commit 11e34e64e4103955fc4568750914c75d65ea87ee upstream
@@ -25,8 +26,8 @@ Signed-off-by: Jiri Kosina <jkosina@suse.cz>
 
 --- a/arch/x86/include/asm/cpufeatures.h
 +++ b/arch/x86/include/asm/cpufeatures.h
-@@ -338,6 +338,7 @@
- #define X86_FEATURE_AVX512_4FMAPS	(18*32+ 3) /* AVX-512 Multiply Accumulation Single precision */
+@@ -339,6 +339,7 @@
+ #define X86_FEATURE_PCONFIG		(18*32+18) /* Intel PCONFIG */
  #define X86_FEATURE_SPEC_CTRL		(18*32+26) /* "" Speculation Control (IBRS + IBPB) */
  #define X86_FEATURE_INTEL_STIBP		(18*32+27) /* "" Single Thread Indirect Branch Predictors */
 +#define X86_FEATURE_FLUSH_L1D		(18*32+28) /* Flush L1D cache */

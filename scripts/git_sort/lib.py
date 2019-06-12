@@ -1,20 +1,38 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+# Copyright (C) 2018 SUSE LLC
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
+# USA.
+
 import collections
 import operator
 import os
 import os.path
-import pygit2
 import re
 import signal
 import subprocess
 import sys
 
+import pygit2_wrapper as pygit2
+
 import exc
 import git_sort
+from patch import Patch
 import series_conf
-import tag
 
 
 # https://stackoverflow.com/a/952952
@@ -32,6 +50,12 @@ def libdir():
 
 
 def check_series():
+    """
+    Check that the "series" file used by quilt looks like a series.conf file and
+    not a simplified version. If using the modified quilt, it will be a symlink
+    to the actual "series.conf" file and doing things like `quilt import` will
+    automatically update series.conf.
+    """
     def check():
         return (open("series").readline().strip() ==
                 "# Kernel patches configuration file")
@@ -63,6 +87,10 @@ def check_series():
 
 
 def repo_path():
+    """
+    Get the path to the git_dir of the mainline linux git repository to use.
+    Typically obtained from the LINUX_GIT environment variable.
+    """
     try:
         search_path = subprocess.check_output(
             os.path.join(libdir(), "..",
@@ -75,6 +103,11 @@ def repo_path():
 
 
 def series_header(series):
+    """
+    Return the block of lines at the top of series that are not patch files
+    entries or automatically generated comments. These lines should be prepended
+    to the output.
+    """
     header = []
 
     for line in series:
@@ -98,6 +131,11 @@ def series_footer(series):
 
 
 def parse_section_header(line):
+    """
+    Parse a series.conf line to identify if it's a comment denoting the
+    beginning of a subsystem section. In that case, return the Head object it
+    corresponds to.
+    """
     oot_text = git_sort.oot.rev
     line = line.strip()
 
@@ -129,6 +167,11 @@ def parse_section_header(line):
 
 
 def patches_per_section(inside_lines):
+    """
+    Returns an OrderedDict
+    result[Head][]
+        patch file name
+    """
     result = collections.OrderedDict([
         (head, [],)
         for head in flatten((git_sort.remotes, (git_sort.oot,),))])
@@ -154,6 +197,9 @@ def patches_per_section(inside_lines):
 
 
 def parse_inside(index, inside_lines, move_upstream):
+    """
+    Parse series.conf lines to generate InputEntry objects.
+    """
     result = []
     for head, names in patches_per_section(inside_lines).items():
         for name in names:
@@ -165,6 +211,10 @@ def parse_inside(index, inside_lines, move_upstream):
 
 
 def list_moved_patches(base_lines, remote_lines):
+    """
+    Return a list of patch file names which are in different subsystem sections
+    between base and remote.
+    """
     base = {}
     result = []
 
@@ -181,6 +231,10 @@ def list_moved_patches(base_lines, remote_lines):
 
 
 class InputEntry(object):
+    """
+    A patch line entry (usually from series.conf) and associated data about the
+    commit it backports.
+    """
     commit_match = re.compile("[0-9a-f]{40}")
 
 
@@ -192,11 +246,21 @@ class InputEntry(object):
 
 
     def from_patch(self, index, name, current_head, move_upstream):
+        """
+        This is where we decide a patch line's fate in the sorted series.conf
+        The following factors determine how a patch is sorted:
+        * commit found in index
+        * patch's series.conf current_head is indexed (ie. the local repo
+          fetches from that remote)
+        * patch appears to have moved downstream/didn't move/upstream
+        * patch's tag is good ("Git-repo:" == current_head.url)
+        * patches may be moved upstream between subsystem sections
+        """
         self.name = name
         if not os.path.exists(name):
             raise exc.KSError("Could not find patch \"%s\"" % (name,))
 
-        with tag.Patch(name) as patch:
+        with Patch(open(name, mode="rb")) as patch:
             commit_tags = patch.get("Git-commit")
             repo_tags = patch.get("Git-repo")
 
@@ -204,11 +268,22 @@ class InputEntry(object):
             self.dest_head = git_sort.oot
             return
 
-        self.revs = [series_conf.firstword(ct) for ct in commit_tags]
-        for rev in self.revs:
-            if not self.commit_match.match(rev):
-                raise exc.KSError("Git-commit tag \"%s\" in patch \"%s\" is not a "
-                              "valid revision." % (rev, name,))
+        class BadTag(Exception):
+            pass
+
+        def get_commit(value):
+            if not value:
+                raise BadTag(value)
+            tag = series_conf.firstword(value)
+            if not self.commit_match.match(tag):
+                raise BadTag(tag)
+            return tag
+
+        try:
+            self.revs = [get_commit(value) for value in commit_tags]
+        except BadTag as e:
+            raise exc.KSError("Git-commit tag \"%s\" in patch \"%s\" is not a "
+                              "valid revision." % (e.args[0], name,))
         rev = self.revs[0]
 
         if len(repo_tags) > 1:
@@ -220,7 +295,6 @@ class InputEntry(object):
             repo = git_sort.remotes[0].repo_url
         self.new_url = None
 
-        # this is where we decide a patch line's fate in the sorted series.conf
         try:
             ic = index.lookup(rev)
         except git_sort.GSKeyError: # commit not found
@@ -324,8 +398,8 @@ def series_sort(index, entries):
     entries is a list of InputEntry objects
 
     Returns an OrderedDict
-        result[Head][]
-            series.conf line with a patch name
+    result[Head][]
+        patch file name
 
     Note that Head may be a "virtual head" like "out-of-tree patches".
     """
@@ -346,6 +420,15 @@ def series_sort(index, entries):
             # no entry.dest
             result[entry.dest_head].append(entry.value)
 
+    mainline = git_sort.remotes[0]
+    if mainline not in index.repo_heads:
+        raise exc.KSError(
+            "Did not find mainline information (ref \"%s\" from the repository "
+            "at \"%s\") in the repository at LINUX_GIT (\"%s\"). For more "
+            "information, please refer to the \"Configuration Requirements\" "
+            "section of \"scripts/git_sort/README.md\"." % (
+                mainline.rev, mainline.repo_url.url, index.repo.path,))
+
     for head in index.repo_heads:
         result[head] = flatten([
             e[1]
@@ -360,9 +443,9 @@ def series_sort(index, entries):
 
 def series_format(entries):
     """
-    entries is an OrderedDict
-        entries[Head][]
-            series.conf line with a patch name
+    entries is an OrderedDict, typically the output of series_sort()
+    result[Head][]
+        patch file name
     """
     result = []
 
@@ -384,8 +467,11 @@ def tag_needs_update(entry):
 
 
 def update_tags(index, entries):
+    """
+    Update the Git-repo tag (possibly by removing it) of patches.
+    """
     for entry in entries:
-        with tag.Patch(entry.name) as patch:
+        with Patch(open(entry.name, mode="r+b")) as patch:
             message = "Failed to update tag \"%s\" in patch \"%s\". This " \
                     "tag is not found."
             if entry.dest_head == git_sort.remotes[0]:

@@ -24,6 +24,12 @@
 # dirty scroll region tricks ...
 
 use_region=false
+if test -f scripts/kconfig/Makefile && \
+   grep -q syncconfig scripts/kconfig/Makefile; then
+    syncconfig="syncconfig"
+else
+    syncconfig="silentoldconfig"
+fi
 
 function _region_init_ () {
     echo -ne '\x1b[H\033[J'	# clear screen
@@ -356,7 +362,7 @@ ask_reuse_config()
 
 filter_config()
 {
-    sed -e '/^# .* is not set$/p' -e '/^$\|^#/d' "$@" | sort
+    sed  -e '/CONFIG_GCC_VERSION/ d' -e '/^# .* is not set$/p' -e '/^$\|^#/d' "$@" | sort
 }
 
 # Keep these in the -vanilla fragment even if -default has the same values.
@@ -401,6 +407,40 @@ for config in $config_files; do
         MAKE_ARGS="ARCH=$cpu_arch"
         ;;
     esac
+    unset cross_arch
+    unset cross_extra
+    case $config in
+    arm64/*)
+	cross_arch="aarch64"
+	;;
+    arm*/*)
+	cross_arch="arm"
+        cross_extra="gnueabi-"
+	;;
+    ppc64le/*)
+	cross_arch="powerpc64le"
+	;;
+    ppc64/*)
+	cross_arch="powerpc64"
+	;;
+    ppc/*)
+        cross_arch="powerpc"
+	;;
+    i386/*)
+	# hack: whatever i386-suse-linux-gcc is, it does not support asm-goto
+	cross_arch="x86_64"
+	;;
+    *)
+        cross_arch="${config%%/*}"
+	;;
+    esac
+    cross_compile="${CROSS_COMPILE-${cross_arch}-suse-linux-${cross_extra}}"
+    if [ -n "$cross_compile" -a -x /usr/bin/${cross_compile}gcc ]; then
+	MAKE_ARGS="$MAKE_ARGS CROSS_COMPILE=$cross_compile"
+    fi
+    if [ -n "$CC" ]; then
+        MAKE_ARGS="$MAKE_ARGS CC=$CC"
+    fi
     if $silent; then
 	    MAKE_ARGS="$MAKE_ARGS -s"
     fi
@@ -453,7 +493,7 @@ for config in $config_files; do
     *)
 	_region_msg_ "working on $config"
         if $check; then
-            if ! make $MAKE_ARGS silentoldconfig </dev/null; then
+            if ! make $MAKE_ARGS $syncconfig </dev/null; then
                 echo "${config#$prefix} is out of date"
                 err=1
                 rm $config_orig

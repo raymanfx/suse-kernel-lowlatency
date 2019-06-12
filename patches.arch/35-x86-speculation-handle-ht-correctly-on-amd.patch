@@ -2,7 +2,7 @@ From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 9 May 2018 21:53:09 +0200
 Subject: x86/speculation: Handle HT correctly on AMD
 Git-commit: 1f50ddb4f4189243c05926b842dc1a0332195f31
-Patch-mainline: v4.18 or v4.17-rc7 (next release)
+Patch-mainline: v4.17-rc7
 References: bsc#1087082 CVE-2018-3639
 
 The AMD64_LS_CFG MSR is a per core MSR on Family 17H CPUs. That means when
@@ -210,7 +210,7 @@ Acked-by: Borislav Petkov <bp@suse.de>
  
  /* Number of siblings per CPU package */
  int smp_num_siblings = 1;
-@@ -243,6 +244,8 @@ static void notrace start_secondary(void
+@@ -244,6 +245,8 @@ static void notrace start_secondary(void
  	 */
  	check_tsc_sync_target();
  
@@ -219,7 +219,7 @@ Acked-by: Borislav Petkov <bp@suse.de>
  	/*
  	 * Lock vector_lock and initialize the vectors on this cpu
  	 * before setting the cpu online. We must set it online with
-@@ -1320,6 +1323,8 @@ void __init native_smp_prepare_cpus(unsi
+@@ -1321,6 +1324,8 @@ void __init native_smp_prepare_cpus(unsi
  	set_mtrr_aps_delayed_init();
  
  	smp_quirk_init_udelay();

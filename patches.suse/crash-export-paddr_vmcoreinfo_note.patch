@@ -4,17 +4,18 @@ Subject: crash: export paddr_vmcoreinfo_note()
 Mime-version: 1.0
 Content-type: text/plain; charset=UTF-8
 Content-transfer-encoding: 8bit
-Patch-mainline: Not yet, queued in mst/vhost
+Patch-mainline: v4.17-rc1
+Git-commit: 43d4cb47f6e854ea9fe868eedf8281f81b5a1252
 References: bsc#1077919
 
 The following patch is going to use the symbol from the fw_cfg module,
 to call the function and write the note location details in the
 vmcoreinfo entry, so qemu can produce dumps with the vmcoreinfo note.
 
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: Hari Bathini <hbathini@linux.vnet.ibm.com>
-CC: Tony Luck <tony.luck@intel.com>
-CC: Vivek Goyal <vgoyal@redhat.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Hari Bathini <hbathini@linux.vnet.ibm.com>
+Cc: Tony Luck <tony.luck@intel.com>
+Cc: Vivek Goyal <vgoyal@redhat.com>
 Acked-by: Baoquan He <bhe@redhat.com>
 Acked-by: Dave Young <dyoung@redhat.com>
 Signed-off-by: Marc-André Lureau <marcandre.lureau@redhat.com>

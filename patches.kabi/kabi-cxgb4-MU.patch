@@ -1,13 +1,14 @@
 From: Thomas Bogendoerfer <tbogendoerfer@suse.de>
 Subject: kabi cxgb4 MU
 Patch-Mainline: never, kABI
-References: bsc#1097585 bsc#1097586 bsc#1097587 bsc#1097588 bsc#1097583 bsc#1097584
+References: bsc#1097585 bsc#1097586 bsc#1097587 bsc#1097588 bsc#1097583 bsc#1097584 bsc#1127371
 
 Signed-off-by: Thomas Bogendoerfer <tbogendoerfer@suse.de>
+Signed-off-by: Denis Kirjanov <dkirjanov@suse.com>
 ---
- drivers/net/ethernet/chelsio/cxgb4/cxgb4.h     |   13 ++++++++++++-
- drivers/net/ethernet/chelsio/cxgb4/cxgb4_uld.h |   11 +++++++++--
- 2 files changed, 21 insertions(+), 3 deletions(-)
+ drivers/net/ethernet/chelsio/cxgb4/cxgb4.h     |   30 +++++++++++++++++++------
+ drivers/net/ethernet/chelsio/cxgb4/cxgb4_uld.h |   13 ++++++++--
+ 2 files changed, 33 insertions(+), 10 deletions(-)
 
 --- a/drivers/net/ethernet/chelsio/cxgb4/cxgb4.h
 +++ b/drivers/net/ethernet/chelsio/cxgb4/cxgb4.h
@@ -21,7 +22,7 @@ Signed-off-by: Thomas Bogendoerfer <tbogendoerfer@suse.de>
  #include <asm/io.h>
  #include "t4_chip_type.h"
  #include "cxgb4_uld.h"
-@@ -313,7 +315,9 @@ struct vpd_params {
+@@ -328,7 +330,9 @@ struct pf_resources {
  };
  
  struct pci_params {
@@ -31,18 +32,70 @@ Signed-off-by: Thomas Bogendoerfer <tbogendoerfer@suse.de>
  	unsigned char speed;
  	unsigned char width;
  };
-@@ -384,8 +388,10 @@ struct adapter_params {
+@@ -354,7 +358,6 @@ struct adapter_params {
+ 	struct sge_params sge;
+ 	struct tp_params  tp;
+ 	struct vpd_params vpd;
+-	struct pf_resources pfres;
+ 	struct pci_params pci;
+ 	struct devlog_params devlog;
+ 	enum pcie_memwin drv_memwin;
+@@ -400,8 +403,11 @@ struct adapter_params {
  	 * used by the Port
  	 */
  	u8 mps_bg_map[MAX_NPORTS];	/* MPS Buffer Group Map */
 +#ifndef __GENKSYMS__
  	bool write_w_imm_support;       /* FW supports WRITE_WITH_IMMEDIATE */
  	bool write_cmpl_support;        /* FW supports WRITE_CMPL */
++	struct pf_resources pfres;
 +#endif
  };
  
  /* State needed to monitor the forward progress of SGE Ingress DMA activities
-@@ -826,7 +832,9 @@ struct vf_info {
+@@ -741,12 +747,14 @@ struct sge_eth_txq {                /* s
+ #ifdef CONFIG_CHELSIO_T4_DCB
+ 	u8 dcb_prio;		    /* DCB Priority bound to queue */
+ #endif
+-	u8 dbqt;                    /* SGE Doorbell Queue Timer in use */
+-	unsigned int dbqtimerix;    /* SGE Doorbell Queue Timer Index */
+ 	unsigned long tso;          /* # of TSO requests */
+ 	unsigned long tx_cso;       /* # of Tx checksum offloads */
+ 	unsigned long vlan_ins;     /* # of Tx VLAN insertions */
+ 	unsigned long mapping_err;  /* # of I/O MMU packet mapping errors */
++#ifndef __GENKSYMS__
++	u8 dbqt;                    /* SGE Doorbell Queue Timer in use */
++	unsigned int dbqtimerix;    /* SGE Doorbell Queue Timer Index */
++#endif
+ } ____cacheline_aligned_in_smp;
+ 
+ struct sge_uld_txq {               /* state for an SGE offload Tx queue */
+@@ -803,14 +811,12 @@ struct sge {
+ 	u16 nqs_per_uld;	    /* # of Rx queues per ULD */
+ 	u16 timer_val[SGE_NTIMERS];
+ 	u8 counter_val[SGE_NCOUNTERS];
+-	u16 dbqtimer_val[SGE_NDBQTIMERS];
+ 	u32 fl_pg_order;            /* large page allocation size */
+ 	u32 stat_len;               /* length of status page at ring end */
+ 	u32 pktshift;               /* padding between CPL & packet data */
+ 	u32 fl_align;               /* response queue message alignment */
+ 	u32 fl_starve_thres;        /* Free List starvation threshold */
+ 
+-	u16 dbqtimer_tick;
+ 	struct sge_idma_monitor_state idma_monitor;
+ 	unsigned int egr_start;
+ 	unsigned int egr_sz;
+@@ -823,6 +829,10 @@ struct sge {
+ 	unsigned long *blocked_fl;
+ 	struct timer_list rx_timer; /* refills starving FLs */
+ 	struct timer_list tx_timer; /* checks Tx queues */
++#ifndef __GENKSYMS__
++	u16 dbqtimer_val[SGE_NDBQTIMERS];
++	u16 dbqtimer_tick;
++#endif
+ };
+ 
+ #define for_each_ethrxq(sge, i) for (i = 0; i < (sge)->ethqsets; i++)
+@@ -867,7 +877,9 @@ struct vf_info {
  	unsigned char vf_mac_addr[ETH_ALEN];
  	unsigned int tx_rate;
  	bool pf_set_mac;
@@ -52,7 +105,15 @@ Signed-off-by: Thomas Bogendoerfer <tbogendoerfer@suse.de>
  };
  
  enum {
-@@ -915,7 +923,6 @@ struct adapter {
+@@ -900,7 +912,6 @@ struct adapter {
+ 	unsigned int flags;
+ 	unsigned int adap_idx;
+ 	enum chip_type chip;
+-	u32 eth_flags;
+ 
+ 	int msg_enable;
+ 	__be16 vxlan_port;
+@@ -957,7 +968,6 @@ struct adapter {
  	struct work_struct tid_release_task;
  	struct work_struct db_full_task;
  	struct work_struct db_drop_task;
@@ -60,17 +121,19 @@ Signed-off-by: Thomas Bogendoerfer <tbogendoerfer@suse.de>
  	bool tid_release_task_busy;
  
  	/* lock for mailbox cmd list */
-@@ -954,6 +961,9 @@ struct adapter {
+@@ -996,6 +1006,11 @@ struct adapter {
  	/* Ethtool Dump */
  	struct ethtool_dump eth_dump;
  
 +#ifndef __GENKSYMS__
++	u32 eth_flags;
++
 +	struct work_struct fatal_err_notify_task;
 +
  	/* HMA */
  	struct hma_data hma;
  
-@@ -961,6 +971,7 @@ struct adapter {
+@@ -1003,6 +1018,7 @@ struct adapter {
  
  	/* Dump buffer for collecting logs in kdump kernel */
  	struct vmcoredd_data vmcoredd;
@@ -109,13 +172,22 @@ Signed-off-by: Thomas Bogendoerfer <tbogendoerfer@suse.de>
  };
  
  struct chcr_stats_debug {
-@@ -352,8 +357,10 @@ struct cxgb4_lld_info {
+@@ -329,7 +334,6 @@ struct cxgb4_lld_info {
+ 	unsigned int cclk_ps;                /* Core clock period in psec */
+ 	unsigned short udb_density;          /* # of user DB/page */
+ 	unsigned short ucq_density;          /* # of user CQs/page */
+-	unsigned int sge_host_page_size;     /* SGE host page size */
+ 	unsigned short filt_mode;            /* filter optional components */
+ 	unsigned short tx_modq[NCHAN];       /* maps each tx channel to a */
+ 					     /* scheduler queue */
+@@ -353,8 +357,11 @@ struct cxgb4_lld_info {
  	void **iscsi_ppm;		     /* iscsi page pod manager */
  	int nodeid;			     /* device numa node id */
  	bool fr_nsmr_tpte_wr_support;	     /* FW supports FR_NSMR_TPTE_WR */
 +#ifndef __GENKSYMS__
  	bool write_w_imm_support;         /* FW supports WRITE_WITH_IMMEDIATE */
  	bool write_cmpl_support;             /* FW supports WRITE_CMPL WR */
++	unsigned int sge_host_page_size;     /* SGE host page size */
 +#endif
  };
  

@@ -19,6 +19,12 @@ arch/x86/kvm/*			PASS
 arch/powerpc/kvm/*		PASS
 arch/x86/kvm/*                  PASS
 kvmppc_*			PASS
+__xive_vm_h_*			PASS
+realmode_pfn_to_page		PASS
+iommu_tce_xchg_rm		PASS
+mm_iommu_lookup_rm		PASS
+mm_iommu_ua_to_hpa_rm		PASS
+mm_iommu_ua_to_hpa_shift_rm	PASS
 
 # removed upstream, not included in inlines/defines
 x86_spec_ctrl_get_default	PASS
@@ -51,3 +57,18 @@ drivers/nvdimm/nd-core.h	PASS
 drivers/nvdimm/nd.h		PASS
 drivers/nvdimm/pfn.h		PASS
 drivers/nvdimm/pmem.h		PASS
+
+# only inter-module local symbols
+drivers/s390/net/qeth*		PASS
+
+# ceph-related modules
+net/ceph/libceph		PASS
+drivers/block/rbd		PASS
+fs/ceph				PASS
+
+# no out-of-tree users
+drivers/crypto/ccp/*		PASS
+
+# intermodule syms shared between cxgb4 and cxgb4vf
+drivers/net/ethernet/chelsio/cxgb4/*   PASS
+drivers/net/ethernet/chelsio/cxgb4vf/* PASS

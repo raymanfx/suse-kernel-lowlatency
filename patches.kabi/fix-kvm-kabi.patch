@@ -10,6 +10,9 @@ References: bsc#1087082 CVE-2018-3639
 
 changing kvm_x86_ops' member.
 
+[js] hopefully there are no out-of-tree drivers to define struct
+     kvm_x86_ops globally (like svm and vmx do).
+
 Signed-off-by: Borislav Petkov <bp@suse.de>
 
 ---
@@ -18,7 +21,7 @@ Signed-off-by: Borislav Petkov <bp@suse.de>
 
 --- a/arch/x86/include/asm/kvm_host.h
 +++ b/arch/x86/include/asm/kvm_host.h
-@@ -932,7 +932,7 @@ struct kvm_x86_ops {
+@@ -938,7 +938,7 @@ struct kvm_x86_ops {
  	int (*hardware_setup)(void);               /* __init */
  	void (*hardware_unsetup)(void);            /* __exit */
  	bool (*cpu_has_accelerated_tpr)(void);
@@ -26,15 +29,16 @@ Signed-off-by: Borislav Petkov <bp@suse.de>
 +	bool (*cpu_has_high_real_mode_segbase)(void);
  	void (*cpuid_update)(struct kvm_vcpu *vcpu);
  
- 	int (*vm_init)(struct kvm *kvm);
-@@ -1095,6 +1095,10 @@ struct kvm_x86_ops {
- 	int (*mem_enc_op)(struct kvm *kvm, void __user *argp);
- 	int (*mem_enc_reg_region)(struct kvm *kvm, struct kvm_enc_region *argp);
- 	int (*mem_enc_unreg_region)(struct kvm *kvm, struct kvm_enc_region *argp);
+ 	struct kvm *(*vm_alloc)(void);
+@@ -1106,6 +1106,11 @@ struct kvm_x86_ops {
+ 
+ 	int (*get_msr_feature)(struct kvm_msr_entry *entry);
+ 
 +
 +#ifndef __GENKSYMS__
 +	bool (*has_emulated_msr)(int index);
 +#endif
++
+ 	bool (*need_emulation_on_page_fault)(struct kvm_vcpu *vcpu);
  };
  
- struct kvm_arch_async_pf {

@@ -192,6 +192,7 @@ remotes = (
     Head(RepoURL("rdma/rdma.git"), "for-rc"),
     Head(RepoURL("rdma/rdma.git"), "for-next"),
     Head(RepoURL("dledford/rdma.git"), "k.o/for-next"),
+    Head(RepoURL("jejb/scsi.git"), "for-next"),
     Head(RepoURL("bp/bp.git"), "for-next"),
     Head(RepoURL("tiwai/sound.git")),
     Head(RepoURL("git://linuxtv.org/media_tree.git")),
@@ -220,7 +221,8 @@ remotes = (
     Head(RepoURL("mkp/scsi.git"), "5.0/scsi-fixes"),
     Head(RepoURL("git://git.kernel.dk/linux-block.git"), "for-next"),
     Head(RepoURL("git://git.kernel.org/pub/scm/virt/kvm/kvm.git"), "queue"),
-    Head(RepoURL("git://git.infradead.org/nvme.git"), "nvme-5.2"),
+    Head(RepoURL("git://git.infradead.org/nvme.git"), "nvme-5.3-rc"),
+    Head(RepoURL("git://git.infradead.org/nvme.git"), "nvme-5.4"),
     Head(RepoURL("dhowells/linux-fs.git")),
     Head(RepoURL("herbert/cryptodev-2.6.git")),
     Head(RepoURL("helgaas/pci.git"), "next"),
@@ -232,6 +234,7 @@ remotes = (
     Head(RepoURL("djbw/nvdimm.git"), "libnvdimm-pending"),
     Head(RepoURL("herbert/crypto-2.6.git"), "master"),
     Head(RepoURL("git://git.cmpxchg.org/linux-mmots.git"), "master"),
+    Head(RepoURL("git://git.linux-nfs.org/~bfields/linux.git"), "nfsd-next"),
 )
 
 

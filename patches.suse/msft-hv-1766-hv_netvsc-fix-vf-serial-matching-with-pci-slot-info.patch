@@ -1,8 +1,7 @@
 From: Haiyang Zhang <haiyangz@microsoft.com>
 Date: Mon, 15 Oct 2018 19:06:15 +0000
-Patch-mainline: Queued
+Patch-mainline: v4.20-rc1
 Subject: hv_netvsc: fix vf serial matching with pci slot info
-Git-repo: git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git
 Git-commit: 005479556197f80139771960dda0dfdcd2d2aad5
 References: bsc#1107207
 

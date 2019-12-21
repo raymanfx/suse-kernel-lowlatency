@@ -118,6 +118,13 @@ The Linux kernel for booting the zfcpdump process on IBM System Z.
 This kernel should only be used by the s390-tools package. This kernel
 should not be installed as a regular booting kernel.
 
+=== kernel-lowlatency ===
+The low latency kernel for x86_64 desktops
+
+Mostly the default openSUSE kernel with additional config options enabled.
+This includes tickless 1000Hz operation mode, scheduler autogrouping and full
+preemption support.
+
 === cluster-md-kmp ===
 Summary: Clustering support for MD devices
 Requires: dlm-kmp

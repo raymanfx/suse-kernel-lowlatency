@@ -207,6 +207,32 @@ project_exists()
 }
 
 
+#### chroot ####
+
+do_chroot()
+{
+	while test $# -gt 0; do
+		case "$1" in
+		*.spec)
+			if test $# -eq 1; then
+				spec=$1
+			fi
+			shift
+			;;
+		esac
+	done
+	if test -z "$spec"; then
+		spec=$(find_spec) || usage
+	fi
+	check_dir_commit "$(dirname "$spec")"
+
+	setup_api
+
+	osc chroot --no-service --local-package \
+	--alternative-project="$PROJECT" \
+	standard "$spec"
+}
+
 #### build ####
 
 do_build()
@@ -361,7 +387,7 @@ case "$1" in
 esac
 
 case "$1" in
-build | upload)
+chroot | build | upload)
 	command=$1
 	shift
 	;;
